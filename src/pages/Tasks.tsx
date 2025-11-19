@@ -15,6 +15,17 @@ const Tasks = () => {
     const [currentPage, setCurrentPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'Sin fecha';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Fecha inválida';
+            return date.toLocaleDateString('es-PE');
+        } catch {
+            return 'Fecha inválida';
+        }
+    };
+
     // Filters
     const [filterStatus, setFilterStatus] = useState<string>('');
     const [filterPriority, setFilterPriority] = useState<string>('');
@@ -50,8 +61,6 @@ const Tasks = () => {
                 projectsAPI.getAll(1, 100),
                 teamAPI.getMembers(),
             ]);
-            console.log('Proyectos cargados:', projectsResponse.projects);
-            console.log('Miembros del equipo cargados:', teamResponse.members);
             setProjects(projectsResponse.projects);
             setTeamMembers(teamResponse.members);
         } catch (err) {
@@ -64,7 +73,7 @@ const Tasks = () => {
         try {
             const response = await tasksAPI.getAll({
                 page: currentPage,
-                limit: 20,
+                limit: 5,
                 status: filterStatus as TaskStatus || undefined,
                 priority: filterPriority as TaskPriority || undefined,
                 projectId: filterProject || undefined,
@@ -109,9 +118,15 @@ const Tasks = () => {
             };
 
             if (editingTask) {
-                const updateData = { ...taskData, status: formStatus };
-                console.log('Actualizando tarea con datos:', updateData);
-                await tasksAPI.update(editingTask.id, updateData);
+                const updateData = {
+                    title: taskData.title,
+                    description: taskData.description,
+                    priority: taskData.priority,
+                    status: formStatus,
+                    due_date: taskData.dueDate,
+                    ...(formAssignedTo && { assigned_to: formAssignedTo }),
+                };
+                await tasksAPI.update(editingTask.id, updateData as any);
             } else {
                 const createData = {
                     title: taskData.title,
@@ -121,7 +136,6 @@ const Tasks = () => {
                     project_id: String(formProjectId),
                     ...(formAssignedTo && { assigned_to: formAssignedTo }),
                 };
-                console.log('Creando tarea con datos:', createData);
                 await tasksAPI.create(createData as any);
             }
 
@@ -129,9 +143,6 @@ const Tasks = () => {
             closeModal();
         } catch (err: any) {
             console.error('Error guardando tarea:', err);
-            console.error('Error response:', err.response);
-            console.error('Error response data:', err.response?.data);
-            console.error('Error response detail:', err.response?.data?.detail);
 
             let errorMessage = 'Error al guardar la tarea';
 
@@ -351,7 +362,7 @@ const Tasks = () => {
                                         <p className="text-sm text-gray-600 mb-2">{task.description}</p>
                                         <div className="flex flex-wrap gap-2 text-sm">
                                             <span className="text-gray-500">
-                                                📅 {new Date(task.dueDate).toLocaleDateString('es-PE')}
+                                                📅 {formatDate(task.dueDate)}
                                             </span>
                                             {task.assignedUser && (
                                                 <span className="text-gray-500">

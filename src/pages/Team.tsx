@@ -12,6 +12,17 @@ const Team = () => {
     const [showTasksModal, setShowTasksModal] = useState(false);
     const [loadingTasks, setLoadingTasks] = useState(false);
 
+    const formatDate = (dateString: string) => {
+        if (!dateString) return 'Sin fecha';
+        try {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) return 'Fecha inválida';
+            return date.toLocaleDateString('es-PE');
+        } catch {
+            return 'Fecha inválida';
+        }
+    };
+
     useEffect(() => {
         loadMembers();
     }, []);
@@ -158,7 +169,7 @@ const Team = () => {
                                 </div>
                                 <p className="text-sm text-gray-600 mb-2">{task.description}</p>
                                 <p className="text-xs text-gray-500">
-                                    Vence: {new Date(task.dueDate).toLocaleDateString('es-PE')}
+                                    Vence: {formatDate(task.dueDate)}
                                 </p>
                             </div>
                         ))}

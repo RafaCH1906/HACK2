@@ -45,9 +45,29 @@ api.interceptors.request.use(
     }
 );
 
-// Interceptor para manejar errores de autenticación
+// Helper para convertir snake_case a camelCase
+const toCamelCase = (obj: any): any => {
+    if (Array.isArray(obj)) {
+        return obj.map(v => toCamelCase(v));
+    } else if (obj !== null && obj.constructor === Object) {
+        return Object.keys(obj).reduce((result, key) => {
+            const camelKey = key.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+            result[camelKey] = toCamelCase(obj[key]);
+            return result;
+        }, {} as any);
+    }
+    return obj;
+};
+
+// Interceptor para manejar errores de autenticación y transformar respuestas
 api.interceptors.response.use(
-    (response) => response,
+    (response) => {
+        // Transformar snake_case a camelCase en las respuestas
+        if (response.data) {
+            response.data = toCamelCase(response.data);
+        }
+        return response;
+    },
     (error) => {
         if (error.response?.status === 401) {
             const isAuthRoute = error.config?.url?.includes('/auth/');
