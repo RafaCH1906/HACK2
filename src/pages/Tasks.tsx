@@ -50,6 +50,8 @@ const Tasks = () => {
                 projectsAPI.getAll(1, 100),
                 teamAPI.getMembers(),
             ]);
+            console.log('Proyectos cargados:', projectsResponse.projects);
+            console.log('Miembros del equipo cargados:', teamResponse.members);
             setProjects(projectsResponse.projects);
             setTeamMembers(teamResponse.members);
         } catch (err) {
@@ -95,31 +97,60 @@ const Tasks = () => {
         setFormError('');
 
         try {
+            // Convertir la fecha a formato ISO completo
+            const dueDateISO = new Date(formDueDate + 'T23:59:59.999Z').toISOString();
+
+            const taskData = {
+                title: formTitle.trim(),
+                description: formDescription.trim(),
+                priority: formPriority,
+                dueDate: dueDateISO,
+                ...(formAssignedTo && { assignedTo: formAssignedTo }),
+            };
+
             if (editingTask) {
-                await tasksAPI.update(editingTask.id, {
-                    title: formTitle.trim(),
-                    description: formDescription.trim(),
-                    priority: formPriority,
-                    status: formStatus,
-                    dueDate: formDueDate,
-                    assignedTo: formAssignedTo || undefined,
-                });
+                const updateData = { ...taskData, status: formStatus };
+                console.log('Actualizando tarea con datos:', updateData);
+                await tasksAPI.update(editingTask.id, updateData);
             } else {
-                await tasksAPI.create({
-                    title: formTitle.trim(),
-                    description: formDescription.trim(),
-                    projectId: formProjectId,
-                    priority: formPriority,
-                    dueDate: formDueDate,
-                    assignedTo: formAssignedTo || undefined,
-                });
+                const createData = {
+                    title: taskData.title,
+                    description: taskData.description,
+                    priority: taskData.priority,
+                    due_date: taskData.dueDate,
+                    project_id: String(formProjectId),
+                    ...(formAssignedTo && { assigned_to: formAssignedTo }),
+                };
+                console.log('Creando tarea con datos:', createData);
+                await tasksAPI.create(createData as any);
             }
 
             await loadTasks();
             closeModal();
-        } catch (err) {
+        } catch (err: any) {
             console.error('Error guardando tarea:', err);
-            setFormError('Error al guardar la tarea');
+            console.error('Error response:', err.response);
+            console.error('Error response data:', err.response?.data);
+            console.error('Error response detail:', err.response?.data?.detail);
+
+            let errorMessage = 'Error al guardar la tarea';
+
+            // Si hay un array de detalles de validación
+            if (err.response?.data?.detail && Array.isArray(err.response.data.detail)) {
+                const details = err.response.data.detail.map((d: any) => {
+                    if (typeof d === 'string') return d;
+                    return `${d.loc?.join('.')} - ${d.msg}`;
+                }).join(', ');
+                errorMessage = `Errores de validación: ${details}`;
+            } else if (err.response?.data?.message) {
+                errorMessage = err.response.data.message;
+            } else if (err.response?.data?.error) {
+                errorMessage = err.response.data.error;
+            } else if (err.message) {
+                errorMessage = err.message;
+            }
+
+            setFormError(errorMessage);
         } finally {
             setFormLoading(false);
         }
@@ -149,6 +180,11 @@ const Tasks = () => {
     };
 
     const openCreateModal = () => {
+        if (projects.length === 0) {
+            alert('Primero debes crear un proyecto antes de poder crear tareas');
+            return;
+        }
+
         setEditingTask(null);
         setFormTitle('');
         setFormDescription('');
