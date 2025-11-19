@@ -7,6 +7,7 @@ import Projects from './pages/Projects';
 import Tasks from './pages/Tasks';
 import Team from './pages/Team';
 import Profile from './pages/Profile';
+import NotFound from './pages/NotFound';
 import Layout from './components/layout/Layout';
 
 // Componente para proteger rutas
@@ -41,21 +42,6 @@ const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   }
 
   return !isAuthenticated ? <>{children}</> : <Navigate to="/dashboard" />;
-};
-
-// Componente para redirigir rutas no encontradas
-const NotFoundRedirect = () => {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  return <Navigate to={isAuthenticated ? "/dashboard" : "/login"} replace />;
 };
 
 function AppRoutes() {
@@ -123,7 +109,9 @@ function AppRoutes() {
 
       {/* Redirects */}
       <Route path="/" element={<Navigate to="/dashboard" />} />
-      <Route path="*" element={<NotFoundRedirect />} />
+
+      {/* 404 Page */}
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 }
