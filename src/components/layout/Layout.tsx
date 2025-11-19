@@ -1,7 +1,6 @@
-import { type ReactNode } from 'react';
+import { type ReactNode, useState, useRef, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import Button from '../common/Button';
 
 interface LayoutProps {
     children: ReactNode;
@@ -10,6 +9,8 @@ interface LayoutProps {
 const Layout = ({ children }: LayoutProps) => {
     const { user, logout } = useAuth();
     const location = useLocation();
+    const [isProfileOpen, setIsProfileOpen] = useState(false);
+    const profileRef = useRef<HTMLDivElement>(null);
 
     const navigation = [
         { name: 'Dashboard', path: '/dashboard', icon: '📊', emoji: true },
@@ -19,6 +20,23 @@ const Layout = ({ children }: LayoutProps) => {
     ];
 
     const isActive = (path: string) => location.pathname === path;
+
+    // Close profile menu when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+                setIsProfileOpen(false);
+            }
+        };
+
+        if (isProfileOpen) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+
+        return () => {
+            document.removeEventListener('mousedown', handleClickOutside);
+        };
+    }, [isProfileOpen]);
 
     const getInitials = (name: string) => {
         return name
@@ -43,22 +61,70 @@ const Layout = ({ children }: LayoutProps) => {
                         </span>
                     </Link>
 
-                    <div className="flex items-center gap-4">
-                        <div className="hidden sm:flex items-center gap-3">
-                            <div className="w-9 h-9 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-semibold shadow-lg">
-                                {getInitials(user?.name || 'U')}
-                            </div>
-                            <div className="text-right">
-                                <p className="font-semibold text-gray-900 text-sm">{user?.name}</p>
-                                <p className="text-xs text-gray-500">{user?.email}</p>
-                            </div>
+                    <div className="flex items-center gap-3">
+                        {/* Profile Section - Clickable with dropdown */}
+                        <div className="relative" ref={profileRef}>
+                            <button
+                                onClick={() => setIsProfileOpen(!isProfileOpen)}
+                                className="flex items-center gap-3 px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-100 hover:from-indigo-100 hover:to-purple-100 transition-all duration-200 cursor-pointer"
+                            >
+                                <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-lg ring-2 ring-white">
+                                    {getInitials(user?.name || 'U')}
+                                </div>
+                                <div className="hidden sm:block text-left">
+                                    <p className="font-semibold text-gray-900 text-sm leading-tight">{user?.name}</p>
+                                    <p className="text-xs text-gray-600">{user?.email}</p>
+                                </div>
+                                <svg
+                                    className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isProfileOpen ? 'rotate-180' : ''}`}
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                >
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+
+                            {/* Dropdown Menu */}
+                            {isProfileOpen && (
+                                <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-gray-200 py-2 z-50 animate-fade-in">
+                                    {/* User Info Header */}
+                                    <div className="px-4 py-3 border-b border-gray-100">
+                                        <p className="font-semibold text-gray-900">{user?.name}</p>
+                                        <p className="text-sm text-gray-600">{user?.email}</p>
+                                    </div>
+
+                                    {/* Menu Items */}
+                                    <div className="py-2">
+                                        <Link
+                                            to="/profile"
+                                            onClick={() => setIsProfileOpen(false)}
+                                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 transition-colors"
+                                        >
+                                            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                            </svg>
+                                            <span className="text-gray-700">Mi Perfil</span>
+                                        </Link>
+
+                                        <div className="border-t border-gray-100 my-2"></div>
+
+                                        <button
+                                            onClick={() => {
+                                                setIsProfileOpen(false);
+                                                logout();
+                                            }}
+                                            className="flex items-center gap-3 px-4 py-2 hover:bg-red-50 transition-colors w-full text-left"
+                                        >
+                                            <svg className="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                            </svg>
+                                            <span className="text-red-600 font-medium">Cerrar Sesión</span>
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
                         </div>
-                        <Button variant="ghost" size="sm" onClick={logout}>
-                            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                            </svg>
-                            <span className="hidden sm:inline">Salir</span>
-                        </Button>
                     </div>
                 </div>
             </header>

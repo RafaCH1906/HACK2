@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard';
 import Projects from './pages/Projects';
 import Tasks from './pages/Tasks';
 import Team from './pages/Team';
+import Profile from './pages/Profile';
 import Layout from './components/layout/Layout';
 
 // Componente para proteger rutas
@@ -93,6 +94,14 @@ function AppRoutes() {
         element={
           <PrivateRoute>
             <Team />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <PrivateRoute>
+            <Profile />
           </PrivateRoute>
         }
       />
