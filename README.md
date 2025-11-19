@@ -63,8 +63,11 @@ http://localhost:5173
 
 ## Deploy
 
-Enlace del deploy:
-[Agregar aquí el link del deploy]
+Enlace del deploy:  
+https://hack-2-fw76.vercel.app/
+
+Ruta de login:  
+https://hack-2-fw76.vercel.app/login
 
 ---
 
